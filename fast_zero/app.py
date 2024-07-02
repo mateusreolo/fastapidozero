@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -54,15 +54,17 @@ def read_users(
     return {'users': users}
 
 
-"""
-@app.get('/users/{user_id}', response_model=UserList)
-def read_user_id(user_id: int, user: UserPublic):
-    if user_id > len(database) or user_id < 1:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
-        )
-    return database[user_id]
-"""
+@app.get('/users/{id}', response_model=UserList)
+def read_user_id(
+    user_id: int = Path(
+        ..., title='User ID', description='O ID utilizado na busca do user'
+    ),
+    session: Session = Depends(get_session),
+):
+    db_user = session.query(User).filter(UserPublic.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail='User not found')
+    return db_user
 
 
 @app.put('/users/{user_id}', response_model=UserPublic)
