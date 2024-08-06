@@ -70,7 +70,7 @@ def update_user(
 ):
     if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, detail='Not enough permissions'
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
         )
 
     current_user.username = user.username

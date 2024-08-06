@@ -3,6 +3,18 @@ from http import HTTPStatus
 from fast_zero.schemas import UserPublic
 
 
+def test_get_token(client, user):
+    response = client.post(
+        '/auth/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert 'access_token' in token
+    assert 'token_type' in token
+
+
 def test_create_user(client):
     response = client.post(
         '/users/',
@@ -146,6 +158,20 @@ def test_update_user(client, user, token):
     }
 
 
+def test_update_user_with_wrong_user(client, other_user, token):
+    response = client.put(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
+
+
 """
 def test_update_user_not_found(client, user, token):
     response = client.put(
@@ -181,13 +207,10 @@ def test_delete_user_not_found(client, user, token):
     assert response.json() == {'detail': 'Not enough permissions'}
 
 
-def test_get_token(client, user):
-    response = client.post(
-        '/auth/token',
-        data={'username': user.email, 'password': user.clean_password},
+def test_delete_user_wrong_user(client, other_user, token):
+    response = client.delete(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
     )
-    token = response.json()
-
-    assert response.status_code == HTTPStatus.OK
-    assert 'access_token' in token
-    assert 'token_type' in token
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
